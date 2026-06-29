@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rob & Rio — August 8, 2026</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Montserrat:wght@200;300;400&display=swap');
+
+  *{margin:0;padding:0;box-sizing:border-box;}
+
+  body{
+    background:#000;
+    color:#fff;
+    font-family:'Montserrat',sans-serif;
+    overflow-x:hidden;
+    min-height:100vh;
+  }
+
+  /* MUSIC PLAYER */
+  .music-bar{
+    position:fixed;top:0;left:0;right:0;z-index:100;
+    background:rgba(0,0,0,0.85);
+    border-bottom:1px solid #333;
+    padding:10px 24px;
+    display:flex;align-items:center;gap:12px;
+    backdrop-filter:blur(8px);
+  }
+  .music-btn{
+    width:32px;height:32px;border-radius:50%;
+    border:1px solid #fff;background:transparent;
+    color:#fff;cursor:pointer;font-size:14px;
+    display:flex;align-items:center;justify-content:center;
+    transition:all .3s;flex-shrink:0;
+  }
+  .music-btn:hover{background:#fff;color:#000;}
+  .music-label{font-size:11px;color:#aaa;letter-spacing:2px;text-transform:uppercase;}
+  .music-note{font-size:13px;animation:pulse 2s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+  /* ENVELOPE SECTION */
+  .envelope-section{
+    min-height:100vh;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    position:relative;
+    padding-top:60px;
+  }
+
+  .envelope-wrap{
+    position:relative;
+    width:340px;height:240px;
+    cursor:pointer;
+    perspective:1000px;
+  }
+
+  .envelope{
+    width:100%;height:100%;
+    position:relative;
+    transform-style:preserve-3d;
+  }
+
+  /* Envelope body */
+  .env-body{
+    position:absolute;inset:0;
+    background:#0a0a0a;
+    border:1px solid #3a3a3a;
+    border-radius:4px;
+    overflow:hidden;
+  }
+
+  /* Bottom triangle */
+  .env-body::before{
+    content:'';position:absolute;bottom:0;left:0;right:0;
+    height:0;
+    border-left:170px solid transparent;
+    border-right:170px solid transparent;
+    border-bottom:120px solid #1a1a1a;
+  }
+
+  /* Side folds */
+  .env-body::after{
+    content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+    background:
+      linear-gradient(135deg, #111 50%, transparent 50%),
+      linear-gradient(225deg, #111 50%, transparent 50%);
+    background-size:50% 100%;
+    background-position:left center, right center;
+    background-repeat:no-repeat;
+    opacity:0.5;
+  }
+
+  /* Wax seal */
+  .wax-seal{
+    position:absolute;
+    bottom:20px;left:50%;transform:translateX(-50%);
+    width:52px;height:52px;
+    background:radial-gradient(circle, #c9a84c, #8b6914);
+    border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Cormorant Garamond',serif;
+    font-size:18px;color:#fff;font-weight:600;
+    z-index:5;
+    box-shadow:0 0 0 3px #0a0a0a, 0 0 0 4px #8b6914;
+    letter-spacing:-1px;
+    transition:transform .3s;
+  }
+
+  /* Envelope flap */
+  .env-flap{
+    position:absolute;top:0;left:0;right:0;
+    height:0;
+    border-left:170px solid transparent;
+    border-right:170px solid transparent;
+    border-top:130px solid #1a1a1a;
+    transform-origin:top center;
+    transition:transform 1s cubic-bezier(0.4,0,0.2,1);
+    z-index:10;
+    filter:drop-shadow(0 2px 8px rgba(0,0,0,0.8));
+  }
+
+  .env-flap.open{
+    transform:rotateX(-180deg);
+  }
+
+  /* Gold border on envelope */
+  .env-border{
+    position:absolute;inset:4px;
+    border:1px solid #3a3320;
+    border-radius:2px;
+    pointer-events:none;
+    z-index:1;
+  }
+
+  /* Letter card that slides out */
+  .letter-card{
+    position:absolute;
+    width:300px;
+    left:50%;transform:translateX(-50%);
+    bottom:30px;
+    background:#fff;
+    color:#111;
+    border-radius:2px;
+    padding:28px 24px;
+    text-align:center;
+    transition:all 1.2s cubic-bezier(0.4,0,0.2,1);
+    opacity:0;
+    z-index:3;
+    box-shadow:0 20px 60px rgba(0,0,0,0.8);
+  }
+
+  .letter-card.visible{
+    bottom:260px;
+    opacity:1;
+  }
+
+  .letter-card .letter-slide{
+    transition:opacity .5s;
+  }
+
+  .letter-card .letter-slide.fade-out{
+    opacity:0;
+  }
+
+  .letter-label{
+    font-size:9px;letter-spacing:4px;text-transform:uppercase;
+    color:#888;margin-bottom:8px;font-family:'Montserrat',sans-serif;
+  }
+  .letter-main{
+    font-family:'Cormorant Garamond',serif;
+    font-size:26px;font-weight:400;color:#111;
+    line-height:1.3;margin-bottom:6px;
+  }
+  .letter-main.big{font-size:32px;}
+  .letter-sub{
+    font-size:11px;letter-spacing:2px;color:#555;
+    text-transform:uppercase;font-family:'Montserrat',sans-serif;
+  }
+  .letter-divider{
+    width:40px;height:1px;background:#c9a84c;
+    margin:12px auto;
+  }
+
+  /* Click hint */
+  .click-hint{
+    margin-top:24px;
+    font-size:11px;letter-spacing:3px;text-transform:uppercase;
+    color:#555;animation:blink 2s infinite;
+  }
+  @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+
+  /* MAIN CONTENT */
+  .main-content{
+    opacity:0;
+    transition:opacity 1.5s;
+    pointer-events:none;
+  }
+  .main-content.visible{
+    opacity:1;
+    pointer-events:auto;
+  }
+
+  /* HERO */
+  .hero{
+    min-height:100vh;
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    text-align:center;
+    padding:80px 24px 60px;
+    position:relative;
+  }
+
+  .hero::before{
+    content:'';position:absolute;inset:0;
+    background:radial-gradient(ellipse at center, rgba(201,168,76,0.06) 0%, transparent 70%);
+  }
+
+  .hero-label{
+    font-size:10px;letter-spacing:5px;color:#888;
+    text-transform:uppercase;margin-bottom:24px;
+  }
+
+  .hero-names{
+    font-family:'Cormorant Garamond',serif;
+    font-size:clamp(52px, 10vw, 88px);
+    font-weight:300;font-style:italic;
+    color:#fff;line-height:1.1;
+    margin-bottom:16px;
+  }
+
+  .hero-amp{
+    color:#c9a84c;font-style:normal;
+  }
+
+  .hero-date{
+    font-size:12px;letter-spacing:5px;color:#aaa;
+    text-transform:uppercase;margin-bottom:8px;
+  }
+
+  .gold-line{
+    width:80px;height:1px;background:linear-gradient(90deg,transparent,#c9a84c,transparent);
+    margin:24px auto;
+  }
+
+  .hero-venue{
+    font-family:'Cormorant Garamond',serif;
+    font-size:18px;color:#ccc;font-style:italic;
+  }
+
+  /* COUNTDOWN */
+  .countdown-section{
+    padding:60px 24px;
+    text-align:center;
+    border-top:1px solid #1a1a1a;
+  }
+
+  .section-label{
+    font-size:10px;letter-spacing:5px;color:#888;
+    text-transform:uppercase;margin-bottom:40px;
+  }
+
+  .countdown-grid{
+    display:flex;gap:32px;justify-content:center;flex-wrap:wrap;
+  }
+
+  .count-item{
+    text-align:center;
+  }
+
+  .count-num{
+    font-family:'Cormorant Garamond',serif;
+    font-size:56px;font-weight:300;color:#fff;
+    line-height:1;display:block;
+  }
+
+  .count-label{
+    font-size:9px;letter-spacing:4px;color:#666;
+    text-transform:uppercase;margin-top:8px;display:block;
+  }
+
+  .count-sep{
+    font-family:'Cormorant Garamond',serif;
+    font-size:48px;color:#333;
+    align-self:flex-start;margin-top:4px;
+  }
+
+  /* DETAILS */
+  .details-section{
+    padding:60px 24px;
+    max-width:700px;margin:0 auto;
+    border-top:1px solid #1a1a1a;
+  }
+
+  .detail-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:32px;
+    margin-top:40px;
+  }
+
+  .detail-card{
+    text-align:center;padding:28px 20px;
+    border:1px solid #222;
+    background:#080808;
+  }
+
+  .detail-icon{font-size:20px;margin-bottom:12px;color:#c9a84c;}
+  .detail-title{
+    font-size:10px;letter-spacing:3px;color:#666;
+    text-transform:uppercase;margin-bottom:10px;
+  }
+  .detail-main{
+    font-family:'Cormorant Garamond',serif;
+    font-size:20px;color:#fff;font-style:italic;margin-bottom:4px;
+  }
+  .detail-sub{font-size:11px;color:#555;letter-spacing:1px;}
+
+  /* RSVP */
+  .rsvp-section{
+    padding:60px 24px 80px;
+    max-width:560px;margin:0 auto;
+    border-top:1px solid #1a1a1a;
+    text-align:center;
+  }
+
+  .rsvp-section h2{
+    font-family:'Cormorant Garamond',serif;
+    font-size:36px;font-weight:300;font-style:italic;
+    color:#fff;margin-bottom:8px;margin-top:40px;
+  }
+
+  .rsvp-deadline{
+    font-size:10px;letter-spacing:3px;color:#888;
+    text-transform:uppercase;margin-bottom:32px;
+  }
+
+  .form-field{
+    margin-bottom:16px;text-align:left;
+  }
+
+  .form-label{
+    display:block;font-size:10px;letter-spacing:3px;color:#666;
+    text-transform:uppercase;margin-bottom:8px;
+  }
+
+  .form-input, .form-select, .form-textarea{
+    width:100%;padding:14px 16px;
+    background:#0a0a0a;
+    border:1px solid #2a2a2a;
+    color:#fff;font-family:'Montserrat',sans-serif;
+    font-size:13px;outline:none;
+    transition:border-color .3s;
+    border-radius:0;
+    -webkit-appearance:none;
+  }
+
+  .form-input:focus,.form-select:focus,.form-textarea:focus{
+    border-color:#c9a84c;
+  }
+
+  .form-select option{background:#111;color:#fff;}
+
+  .form-textarea{min-height:80px;resize:vertical;}
+
+  .attend-btns{
+    display:grid;grid-template-columns:1fr 1fr;gap:12px;
+    margin-bottom:20px;
+  }
+
+  .attend-btn{
+    padding:14px;border:1px solid #2a2a2a;
+    background:transparent;color:#666;
+    font-family:'Montserrat',sans-serif;
+    font-size:11px;letter-spacing:2px;
+    text-transform:uppercase;cursor:pointer;
+    transition:all .3s;
+  }
+
+  .attend-btn.selected-yes{
+    border-color:#c9a84c;color:#c9a84c;background:#0f0d06;
+  }
+
+  .attend-btn.selected-no{
+    border-color:#555;color:#aaa;background:#0a0a0a;
+  }
+
+  .submit-btn{
+    width:100%;padding:16px;
+    background:#fff;color:#000;
+    border:none;cursor:pointer;
+    font-family:'Montserrat',sans-serif;
+    font-size:11px;letter-spacing:4px;
+    text-transform:uppercase;
+    transition:all .3s;margin-top:8px;
+  }
+
+  .submit-btn:hover{background:#c9a84c;color:#000;}
+  .submit-btn:disabled{opacity:0.5;cursor:not-allowed;}
+
+  .form-msg{
+    margin-top:16px;font-size:12px;letter-spacing:1px;
+    min-height:20px;
+  }
+  .form-msg.success{color:#c9a84c;}
+  .form-msg.error{color:#e24b4a;}
+
+  /* FOOTER */
+  .footer{
+    text-align:center;padding:40px 24px;
+    border-top:1px solid #111;
+  }
+  .footer-names{
+    font-family:'Cormorant Garamond',serif;
+    font-size:22px;font-style:italic;color:#555;
+  }
+  .footer-heart{color:#c9a84c;margin:0 8px;}
+
+  /* particles */
+  .particles{
+    position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden;
+  }
+  .particle{
+    position:absolute;width:2px;height:2px;
+    background:#c9a84c;border-radius:50%;
+    animation:float linear infinite;
+    opacity:0;
+  }
+  @keyframes float{
+    0%{transform:translateY(100vh) translateX(0);opacity:0;}
+    10%{opacity:0.6;}
+    90%{opacity:0.2;}
+    100%{transform:translateY(-10vh) translateX(var(--drift));opacity:0;}
+  }
+</style>
+</head>
+<body>
+
+<div class="particles" id="particles"></div>
+
+<!-- MUSIC BAR -->
+<div class="music-bar">
+  <button class="music-btn" id="musicBtn" onclick="toggleMusic()" title="Toggle music">▶</button>
+  <span class="music-note" id="musicNote" style="display:none;">♪</span>
+  <span class="music-label">Rob & Rio — August 8, 2026</span>
+  <audio id="bgMusic" loop>
+    <source src="https://www.soundjay.com/misc/sounds/bell-ringing-05.mp3" type="audio/mpeg">
+  </audio>
+</div>
+
+<!-- ENVELOPE SECTION -->
+<div class="envelope-section" id="envelopeSection">
+  <div style="text-align:center;margin-bottom:48px;">
+    <p style="font-size:10px;letter-spacing:5px;color:#444;text-transform:uppercase;">You are cordially invited</p>
+  </div>
+
+  <div class="envelope-wrap" onclick="openEnvelope()">
+    <div class="envelope">
+      <div class="env-body">
+        <div class="env-border"></div>
+        <div class="wax-seal">R&R</div>
+      </div>
+      <div class="env-flap" id="envFlap"></div>
+    </div>
+
+    <!-- Letter that slides out -->
+    <div class="letter-card" id="letterCard">
+      <div class="letter-slide" id="letterContent">
+        <div class="letter-label">Together with their families</div>
+        <div class="letter-main big">Rob & Rio</div>
+        <div class="letter-divider"></div>
+        <div class="letter-sub">request the pleasure of your company</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="click-hint" id="clickHint">Click to open</div>
+
+  <div style="margin-top:48px;text-align:center;" id="enterBtn" style="display:none;opacity:0;">
+    <button onclick="enterSite()" style="
+      background:transparent;border:1px solid #333;color:#888;
+      padding:14px 40px;font-family:'Montserrat',sans-serif;
+      font-size:10px;letter-spacing:4px;text-transform:uppercase;
+      cursor:pointer;transition:all .3s;margin-top:20px;
+    " onmouseover="this.style.borderColor='#c9a84c';this.style.color='#c9a84c'"
+       onmouseout="this.style.borderColor='#333';this.style.color='#888'">
+      Enter
+    </button>
+  </div>
+</div>
+
+<!-- MAIN WEDDING SITE -->
+<div class="main-content" id="mainContent">
+
+  <!-- HERO -->
+  <div class="hero">
+    <p class="hero-label">The wedding of</p>
+    <h1 class="hero-names">Rob <span class="hero-amp">&</span> Rio</h1>
+    <p class="hero-date">Saturday, August 8, 2026</p>
+    <div class="gold-line"></div>
+    <p class="hero-venue">Mahogany Farm</p>
+  </div>
+
+  <!-- COUNTDOWN -->
+  <div class="countdown-section">
+    <p class="section-label">Counting down to forever</p>
+    <div class="countdown-grid">
+      <div class="count-item">
+        <span class="count-num" id="cd-days">00</span>
+        <span class="count-label">Days</span>
+      </div>
+      <div class="count-sep">·</div>
+      <div class="count-item">
+        <span class="count-num" id="cd-hours">00</span>
+        <span class="count-label">Hours</span>
+      </div>
+      <div class="count-sep">·</div>
+      <div class="count-item">
+        <span class="count-num" id="cd-mins">00</span>
+        <span class="count-label">Minutes</span>
+      </div>
+      <div class="count-sep">·</div>
+      <div class="count-item">
+        <span class="count-num" id="cd-secs">00</span>
+        <span class="count-label">Seconds</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- DETAILS -->
+  <div class="details-section" style="text-align:center;">
+    <p class="section-label">Wedding details</p>
+    <div class="gold-line"></div>
+    <div class="detail-grid">
+      <div class="detail-card">
+        <div class="detail-icon">📅</div>
+        <div class="detail-title">Date</div>
+        <div class="detail-main">August 8, 2026</div>
+        <div class="detail-sub">Saturday</div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-icon">🕐</div>
+        <div class="detail-title">Time</div>
+        <div class="detail-main">4:00 PM</div>
+        <div class="detail-sub">Ceremony begins</div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-icon">📍</div>
+        <div class="detail-title">Venue</div>
+        <div class="detail-main">Mahogany Farm</div>
+        <div class="detail-sub">Taguig, Philippines</div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-icon">👔</div>
+        <div class="detail-title">Dress code</div>
+        <div class="detail-main">Black & White</div>
+        <div class="detail-sub">Formal attire</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RSVP -->
+  <div class="rsvp-section">
+    <p class="section-label">Kindly reply</p>
+    <div class="gold-line"></div>
+    <h2>RSVP</h2>
+    <p class="rsvp-deadline">Please respond by July 15, 2026</p>
+
+    <div class="form-field">
+      <label class="form-label">Full name *</label>
+      <input class="form-input" id="rsvp-name" type="text" placeholder="Your full name">
+    </div>
+
+    <div class="form-field">
+      <label class="form-label">Email address</label>
+      <input class="form-input" id="rsvp-email" type="email" placeholder="your@email.com">
+    </div>
+
+    <div class="form-field">
+      <label class="form-label">Number of guests</label>
+      <select class="form-select" id="rsvp-guests">
+        <option value="1">1 guest</option>
+        <option value="2">2 guests</option>
+        <option value="3">3 guests</option>
+        <option value="4">4 guests</option>
+      </select>
+    </div>
+
+    <div class="form-field">
+      <label class="form-label">Will you attend? *</label>
+      <div class="attend-btns">
+        <button class="attend-btn" id="btn-yes" onclick="selectAttend('yes')">Joyfully accepts</button>
+        <button class="attend-btn" id="btn-no" onclick="selectAttend('no')">Regretfully declines</button>
+      </div>
+    </div>
+
+    <div class="form-field">
+      <label class="form-label">Message to the couple</label>
+      <textarea class="form-textarea" id="rsvp-message" placeholder="Share your wishes..."></textarea>
+    </div>
+
+    <button class="submit-btn" id="submitBtn" onclick="submitRSVP()">Send RSVP</button>
+    <div class="form-msg" id="formMsg"></div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="footer">
+    <div class="gold-line"></div>
+    <p class="footer-names">Rob <span class="footer-heart">♥</span> Rio</p>
+    <p style="font-size:10px;color:#333;letter-spacing:3px;margin-top:12px;">08 · 08 · 2026</p>
+  </div>
+
+</div>
+
+<script>
+const SUPABASE_URL = 'https://aoxaxuoktrgsgoumrrud.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFveGF4dW9rdHJnc2dvdW1ycnVkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2NzUyMzQsImV4cCI6MjA5ODI1MTIzNH0.cejmdfDdyhD7uNaCjaagbktAsPpZ5TvI4b9Yvj8acto';
+
+let attending = null;
+let envelopeOpened = false;
+let letterSlide = 0;
+let letterInterval = null;
+
+const letters = [
+  {label:'Together with their families', main:'Rob & Rio', sub:'request the pleasure of your company', big:true},
+  {label:'Date & time', main:'August 8, 2026', sub:'Saturday · 4:00 in the afternoon', big:false},
+  {label:'Venue', main:'Mahogany Farm', sub:'Taguig, Philippines', big:false},
+  {label:'Dress code', main:'Black & White', sub:'Formal attire requested', big:false},
+  {label:'Kindly reply by', main:'July 15, 2026', sub:'Scroll down to RSVP below', big:false},
+];
+
+function openEnvelope(){
+  if(envelopeOpened) return;
+  envelopeOpened = true;
+
+  document.getElementById('envFlap').classList.add('open');
+  document.getElementById('clickHint').style.display='none';
+
+  setTimeout(()=>{
+    const card = document.getElementById('letterCard');
+    card.classList.add('visible');
+    startLetterCycle();
+
+    setTimeout(()=>{
+      const btn = document.getElementById('enterBtn');
+      btn.style.display='block';
+      setTimeout(()=>{btn.style.opacity='1';btn.style.transition='opacity 1s';},50);
+    }, 2000);
+  }, 800);
+}
+
+function startLetterCycle(){
+  showLetter(0);
+  letterInterval = setInterval(()=>{
+    letterSlide = (letterSlide+1) % letters.length;
+    const content = document.getElementById('letterContent');
+    content.classList.add('fade-out');
+    setTimeout(()=>{
+      showLetter(letterSlide);
+      content.classList.remove('fade-out');
+    },500);
+  }, 3000);
+}
+
+function showLetter(i){
+  const l = letters[i];
+  document.getElementById('letterContent').innerHTML = `
+    <div class="letter-label">${l.label}</div>
+    <div class="letter-main${l.big?' big':''}">${l.main}</div>
+    <div class="letter-divider"></div>
+    <div class="letter-sub">${l.sub}</div>
+  `;
+}
+
+function enterSite(){
+  if(letterInterval) clearInterval(letterInterval);
+  const envSec = document.getElementById('envelopeSection');
+  const main = document.getElementById('mainContent');
+  envSec.style.transition='opacity 1s';
+  envSec.style.opacity='0';
+  setTimeout(()=>{
+    envSec.style.display='none';
+    main.classList.add('visible');
+    startCountdown();
+  },1000);
+}
+
+function startCountdown(){
+  const wedding = new Date('2026-08-08T16:00:00+08:00');
+  function update(){
+    const now = new Date();
+    const diff = wedding - now;
+    if(diff<=0){
+      document.getElementById('cd-days').textContent='00';
+      return;
+    }
+    const d = Math.floor(diff/86400000);
+    const h = Math.floor((diff%86400000)/3600000);
+    const m = Math.floor((diff%3600000)/60000);
+    const s = Math.floor((diff%60000)/1000);
+    document.getElementById('cd-days').textContent=String(d).padStart(2,'0');
+    document.getElementById('cd-hours').textContent=String(h).padStart(2,'0');
+    document.getElementById('cd-mins').textContent=String(m).padStart(2,'0');
+    document.getElementById('cd-secs').textContent=String(s).padStart(2,'0');
+  }
+  update();
+  setInterval(update,1000);
+}
+
+function selectAttend(val){
+  attending=val;
+  document.getElementById('btn-yes').className='attend-btn'+(val==='yes'?' selected-yes':'');
+  document.getElementById('btn-no').className='attend-btn'+(val==='no'?' selected-no':'');
+}
+
+async function submitRSVP(){
+  const name=document.getElementById('rsvp-name').value.trim();
+  const email=document.getElementById('rsvp-email').value.trim();
+  const guests=parseInt(document.getElementById('rsvp-guests').value);
+  const message=document.getElementById('rsvp-message').value.trim();
+  const msg=document.getElementById('formMsg');
+
+  if(!name){msg.className='form-msg error';msg.textContent='Please enter your name.';return;}
+  if(!attending){msg.className='form-msg error';msg.textContent='Please let us know if you\'ll attend.';return;}
+
+  const btn=document.getElementById('submitBtn');
+  btn.disabled=true;btn.textContent='Sending...';
+  msg.textContent='';
+
+  try{
+    const res=await fetch(`${SUPABASE_URL}/rest/v1/rsvp`,{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'apikey':SUPABASE_KEY,
+        'Authorization':'Bearer '+SUPABASE_KEY,
+        'Prefer':'return=minimal'
+      },
+      body:JSON.stringify({name,email,guests,attending,message})
+    });
+
+    if(res.ok||res.status===201){
+      msg.className='form-msg success';
+      msg.textContent='✓ Your RSVP has been received. Rob & Rio thank you!';
+      btn.textContent='RSVP Sent ✓';
+      document.getElementById('rsvp-name').value='';
+      document.getElementById('rsvp-email').value='';
+      document.getElementById('rsvp-message').value='';
+      attending=null;
+      document.getElementById('btn-yes').className='attend-btn';
+      document.getElementById('btn-no').className='attend-btn';
+    } else {
+      const err=await res.text();
+      throw new Error(err);
+    }
+  }catch(e){
+    msg.className='form-msg error';
+    msg.textContent='Something went wrong. Please try again.';
+    btn.disabled=false;btn.textContent='Send RSVP';
+    console.error(e);
+  }
+}
+
+function toggleMusic(){
+  const audio=document.getElementById('bgMusic');
+  const btn=document.getElementById('musicBtn');
+  const note=document.getElementById('musicNote');
+  if(audio.paused){
+    audio.play().then(()=>{btn.textContent='⏸';note.style.display='inline';})
+    .catch(()=>{btn.textContent='▶';});
+  } else {
+    audio.pause();btn.textContent='▶';note.style.display='none';
+  }
+}
+
+// Particles
+function createParticles(){
+  const container=document.getElementById('particles');
+  for(let i=0;i<20;i++){
+    const p=document.createElement('div');
+    p.className='particle';
+    p.style.left=Math.random()*100+'%';
+    p.style.animationDuration=(8+Math.random()*12)+'s';
+    p.style.animationDelay=(Math.random()*10)+'s';
+    p.style.setProperty('--drift',(Math.random()*60-30)+'px');
+    p.style.width=p.style.height=(Math.random()>0.7?3:2)+'px';
+    container.appendChild(p);
+  }
+}
+createParticles();
+</script>
+</body>
+</html>
